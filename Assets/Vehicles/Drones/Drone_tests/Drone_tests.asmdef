@@ -1,0 +1,9 @@
+﻿{
+    "name": "Drone_tests",
+    "optionalUnityReferences": [
+        "TestAssemblies"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ]
+}
