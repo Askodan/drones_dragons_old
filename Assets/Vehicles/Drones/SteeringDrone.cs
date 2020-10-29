@@ -168,11 +168,7 @@ public class SteeringDrone : MonoBehaviour
 	void RotatePropellers (Propeller[] _propellers)
 	{
 		for (int i = 0; i < _propellers.Length; i++) {
-			if (i == 1 || i == 2) {
-				_propellers [i].Rotate ();
-			} else {
-				_propellers [i].Rotate ();
-			}
+            _propellers [i].Rotate ();
 		}
 	}
 
@@ -184,18 +180,18 @@ public class SteeringDrone : MonoBehaviour
 			if (transform.InverseTransformPoint (propellers [i].transform.position).x > 0) {
 				if (transform.InverseTransformPoint (propellers [i].transform.position).z > 0) {
 					screws [0] = propellers [i];
-					propellers[i].AddSmudger (screws [0].transform, true, 0);
+					propellers[i].Setup (true, 0);
 				} else {
 					screws [1] = propellers [i];
-					propellers[i].AddSmudger (screws [1].transform, false, 1);
+					propellers[i].Setup (false, 1);
 				}
 			} else {
 				if (transform.InverseTransformPoint (propellers [i].transform.position).z > 0) {
 					screws [2] = propellers [i];
-					propellers[i].AddSmudger (screws [2].transform, false, 2);
+					propellers[i].Setup (false, 2);
 				} else {
 					screws [3] = propellers [i];
-					propellers[i].AddSmudger (screws [3].transform, true, 3);
+					propellers[i].Setup (true, 3);
 				}
 			}
 		}
