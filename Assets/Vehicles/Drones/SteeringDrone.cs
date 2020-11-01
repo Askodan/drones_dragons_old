@@ -13,12 +13,12 @@ public class SteeringDrone : MonoBehaviour
     //ustawienia fizyki
     public float forceFactor = 3.6f;
 
-    private float thrust;
-    private float pitch;
-    private float roll;
-    private float yaw;
+    protected float thrust;
+    protected float pitch;
+    protected float roll;
+    protected float yaw;
 
-    private new Rigidbody rigidbody;
+    protected new Rigidbody rigidbody;
     protected float zeroThrust;
 
     public bool keepAltitude { get; set; }
@@ -29,82 +29,83 @@ public class SteeringDrone : MonoBehaviour
 
     public bool selfLeveling { get; set; }
 
-    protected int number;
-    [HideInInspector] public GameObject flashLight;
-    private float propellerDistFromCenter;
-    protected Transform CenterOfMass;
-    void Start() {
-        selfLeveling = true;
-        //poszukiwanie syfu
-        rigidbody = this.GetComponent<Rigidbody>();
-        rigidbody.maxAngularVelocity = 100;
-        CenterOfMass = transform.Find("CenterOfMass");
-        rigidbody.centerOfMass = CenterOfMass.localPosition;
-        propellers = transform.GetComponentsInChildren<Propeller>();
-        CheckPropellers();
-        Transform[] children = transform.GetComponentsInChildren<Transform>();
-        int j = 0;
-        for (int i = 0; i < children.Length; i++) {
-            if (children[i].name == "FlashLight") {
-                flashLight = children[i].gameObject;
-                if (flashLight.activeSelf) {
-                    flashLight.SetActive(false);
-                }
-            }
-        }
+    [HideInInspector] public VehicleLight flashLight;
+    protected float propellerDistFromCenter;
+    protected CenterOfMass centerOfMass;
 
-        Setup();      
+    void Awake()
+    {
+        rigidbody = GetComponent<Rigidbody>();
+        rigidbody.maxAngularVelocity = 100;
+        centerOfMass = GetComponentInChildren<CenterOfMass>();
+        rigidbody.centerOfMass = centerOfMass.transform.localPosition;
+        propellers = GetComponentsInChildren<Propeller>();
+        flashLight = GetComponentInChildren<VehicleLight>();
+        CheckPropellers();
+        Setup();
     }
+
     void Update()
     {
         RotatePropellers(propellers);
     }
 
     public void Steer(float axis_Thrust, float axis_Pitch, float axis_Roll, float axis_Yaw, float axis_Turbo,
-        bool butDown_Lights, bool butDown_Motors, bool butDown_Stabilize, bool butDown_KeepAltitude, bool butDown_SelfLeveling) {
-        if (motorsOn) {
+        bool butDown_Lights, bool butDown_Motors, bool butDown_Stabilize, bool butDown_KeepAltitude, bool butDown_SelfLeveling)
+    {
+        if (motorsOn)
+        {
             thrust = axis_Thrust;
             pitch = axis_Pitch * pitchFactor;
             roll = axis_Roll * rollFactor;
             yaw = axis_Yaw * yawFactor;
 
-            if (keepAltitude) {
+            if (keepAltitude)
+            {
                 thrust = Mathf.Clamp(thrust + zeroThrust, -1, 1);
             }
-            for (int i = 0; i < propellers.Length - number; i++) {
+            for (int i = 0; i < propellers.Length; i++)
+            {
                 propellers[i].CurrentRotationSpeed = thrust;
             }
-            propellers[0].CurrentRotationSpeed += -pitch-roll;
-            propellers[1].CurrentRotationSpeed +=  pitch-roll;
-            propellers[2].CurrentRotationSpeed += -pitch+roll;
-            propellers[3].CurrentRotationSpeed +=  pitch+roll;
+            propellers[0].CurrentRotationSpeed += -pitch - roll;
+            propellers[1].CurrentRotationSpeed += pitch - roll;
+            propellers[2].CurrentRotationSpeed += -pitch + roll;
+            propellers[3].CurrentRotationSpeed += pitch + roll;
 
         }
-        if (butDown_Lights) {
-            flashLight.SetActive(!flashLight.activeSelf);
+        if (butDown_Lights)
+        {
+            flashLight.Change();
         }
         if (butDown_Motors)
         {
             motorsOn = !motorsOn;
-            if (!motorsOn) {
-                for (int i = 0; i < propellers.Length; i++) {
+            if (!motorsOn)
+            {
+                for (int i = 0; i < propellers.Length; i++)
+                {
                     propellers[i].CurrentRotationSpeed = 0f;
                 }
             }
         }
-        if (butDown_Stabilize) {
+        if (butDown_Stabilize)
+        {
             stabilize = !stabilize;
         }
-        if (butDown_KeepAltitude) {
+        if (butDown_KeepAltitude)
+        {
             keepAltitude = !keepAltitude;
         }
-        if (butDown_SelfLeveling) {
+        if (butDown_SelfLeveling)
+        {
             //if (moveWingsCoroutine != null)
             //    StopCoroutine(moveWingsCoroutine);
             //moveWingsCoroutine = StartCoroutine(MoveWings());
             selfLeveling = !selfLeveling;
         }
     }
+
     void FixedUpdate()
     {
         if (motorsOn)
@@ -112,15 +113,18 @@ public class SteeringDrone : MonoBehaviour
             ApplyPropellersThrust();
         }
     }
-    public void ApplyPropellersThrust() {
-        
+
+    public void ApplyPropellersThrust()
+    {
+
         float[] cor = new float[propellers.Length];
         if (selfLeveling)
         {
             float averageOfPropellersAltitude = calcAverageOfPropellersAltitude();
 
             float[] propellerAngleFromFlat = new float[4];
-            for (int i = 0; i < propellers.Length - number; i++) {
+            for (int i = 0; i < propellers.Length; i++)
+            {
                 propellerAngleFromFlat[i] = Mathf.Asin((averageOfPropellersAltitude - propellers[i].transform.position.y) / propellerDistFromCenter);
             }
             float[] pitchRollCor = new float[4];
@@ -140,16 +144,19 @@ public class SteeringDrone : MonoBehaviour
             cor[1] += pitchRollCor[3] * roll + propellerAngleFromFlat[1] * (1 - roll);
             cor[2] += pitchRollCor[2] * roll + propellerAngleFromFlat[2] * (1 - roll);
             cor[3] += pitchRollCor[3] * roll + propellerAngleFromFlat[3] * (1 - roll);
-            for (int i = 0; i < propellers.Length; i++) {
+            for (int i = 0; i < propellers.Length; i++)
+            {
                 cor[i] /= 2;
             }
         }
-        for (int i = 0; i < propellers.Length; i++) {
+        for (int i = 0; i < propellers.Length; i++)
+        {
             Vector3 thrustVec = new Vector3(0, 0, propellers[i].CurrentRotationSpeed * forceFactor + cor[i] * selfLevelFactor);
             rigidbody.AddForceAtPosition(propellers[i].transform.rotation * thrustVec, propellers[i].transform.position);
             //Debug.DrawLine (propellers [i].position, propellers [i].position + propellers [i].rotation * thrustVec);
         }
-        if (stabilize) {
+        if (stabilize)
+        {
             rigidbody.AddTorque(rigidbody.angularVelocity * (-Time.deltaTime * stabVelFactor));
         }
         rigidbody.AddTorque(transform.rotation * new Vector3(0, yaw, 0));
@@ -158,54 +165,67 @@ public class SteeringDrone : MonoBehaviour
     float calcAverageOfPropellersAltitude()
     {
         float averageOfPropellersAltitude = 0f;
-        for (int i = 0; i < propellers.Length - number; i++)
+        for (int i = 0; i < propellers.Length; i++)
         {
             averageOfPropellersAltitude += propellers[i].transform.position.y;
         }
-        return averageOfPropellersAltitude/4;
+        return averageOfPropellersAltitude / 4;
     }
 
-	void RotatePropellers (Propeller[] _propellers)
-	{
-		for (int i = 0; i < _propellers.Length; i++) {
-            _propellers [i].Rotate ();
-		}
-	}
+    void RotatePropellers(Propeller[] _propellers)
+    {
+        for (int i = 0; i < _propellers.Length; i++)
+        {
+            _propellers[i].Rotate();
+        }
+    }
 
-	protected void Setup ()
-	{
-		//order x+z+, x+z-, x-z+, x-z-
-		Propeller[] screws = new Propeller[propellers.Length];
-		for (int i = 0; i < propellers.Length; i++) {
-			if (transform.InverseTransformPoint (propellers [i].transform.position).x > 0) {
-				if (transform.InverseTransformPoint (propellers [i].transform.position).z > 0) {
-					screws [0] = propellers [i];
-					propellers[i].Setup (true, 0);
-				} else {
-					screws [1] = propellers [i];
-					propellers[i].Setup (false, 1);
-				}
-			} else {
-				if (transform.InverseTransformPoint (propellers [i].transform.position).z > 0) {
-					screws [2] = propellers [i];
-					propellers[i].Setup (false, 2);
-				} else {
-					screws [3] = propellers [i];
-					propellers[i].Setup (true, 3);
-				}
-			}
-		}
-		propellers = screws;
-        
+    protected void Setup()
+    {
+        //order x+z+, x+z-, x-z+, x-z-
+        Propeller[] screws = new Propeller[propellers.Length];
+        for (int i = 0; i < propellers.Length; i++)
+        {
+            if (transform.InverseTransformPoint(propellers[i].transform.position).x > 0)
+            {
+                if (transform.InverseTransformPoint(propellers[i].transform.position).z > 0)
+                {
+                    screws[0] = propellers[i];
+                    propellers[i].Setup(true, 0);
+                }
+                else
+                {
+                    screws[1] = propellers[i];
+                    propellers[i].Setup(false, 1);
+                }
+            }
+            else
+            {
+                if (transform.InverseTransformPoint(propellers[i].transform.position).z > 0)
+                {
+                    screws[2] = propellers[i];
+                    propellers[i].Setup(false, 2);
+                }
+                else
+                {
+                    screws[3] = propellers[i];
+                    propellers[i].Setup(true, 3);
+                }
+            }
+        }
+        propellers = screws;
+
         zeroThrust = -Physics.gravity.y / propellers.Length * rigidbody.mass / forceFactor;
         // calc propellers dist from center
         Vector3 propellersCenter = Vector3.zero;
-        foreach (var propeller in propellers) {
+        foreach (var propeller in propellers)
+        {
             propellersCenter += propeller.transform.position;
         }
         propellersCenter /= 4f;
         propellerDistFromCenter = Vector3.Distance(propellersCenter, propellers[0].transform.position);
-	}
+    }
+
     protected void CheckPropellers()
     {
         if (propellers.Length != 4)
@@ -213,13 +233,16 @@ public class SteeringDrone : MonoBehaviour
             Debug.LogError("Number of propellers doesn't match! Should be 4 is " + propellers.Length.ToString());
         }
         float[] dists = new float[4];
-		dists[0] = Vector3.Distance (propellers [0].transform.position, CenterOfMass.position);
-		dists[1] = Vector3.Distance (propellers [1].transform.position, CenterOfMass.position);
-		dists[2] = Vector3.Distance (propellers [2].transform.position, CenterOfMass.position);
-		dists[3] = Vector3.Distance (propellers [3].transform.position, CenterOfMass.position);
-        for(int i = 0; i < dists.Length; i++){
-            for(int j = i; j < dists.Length; j++){
-                if(Mathf.Abs(dists[i]-dists[j])>0.0001){
+        dists[0] = Vector3.Distance(propellers[0].transform.position, centerOfMass.transform.position);
+        dists[1] = Vector3.Distance(propellers[1].transform.position, centerOfMass.transform.position);
+        dists[2] = Vector3.Distance(propellers[2].transform.position, centerOfMass.transform.position);
+        dists[3] = Vector3.Distance(propellers[3].transform.position, centerOfMass.transform.position);
+        for (int i = 0; i < dists.Length; i++)
+        {
+            for (int j = i; j < dists.Length; j++)
+            {
+                if (Mathf.Abs(dists[i] - dists[j]) > 0.0001)
+                {
                     Debug.LogError("Distance from center is different for " + i + " " + j);
                 }
             }
@@ -230,8 +253,8 @@ public class SteeringDrone : MonoBehaviour
 
 public enum DroneType
 {
-	quadrocopter,
-	heksacopter,
-	octacopter,
-	prototype
+    quadrocopter,
+    heksacopter,
+    octacopter,
+    prototype
 }
