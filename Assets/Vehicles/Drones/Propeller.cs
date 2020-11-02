@@ -4,20 +4,22 @@ using UnityEngine;
 
 public class Propeller : MonoBehaviour
 {
-    private float PowerMultiplier { get; set; }
     public GameObject SmudgePrefab;
-    private SmudgeRotation smudger;
-    public float CurrentRotationSpeed { get; set; }
-    private float maxVel = 18000f;
-    private int id;
+    private float currentRotationSpeed;
+    public float CurrentRotationSpeed { get { return currentRotationSpeed; } set { currentRotationSpeed = Mathf.Clamp(value, -1f, 1f); } }
+    public float Rotation { get { return Direction * CurrentRotationSpeed; } }
     public int ID { get; }
+    private int id;
+    private float Direction { get; set; }
+    private SmudgeRotation smudger;
+    private float maxVel = 18000f;
     // Start is called before the first frame update
     void Awake()
     {
     }
     public void Rotate()
     {
-        transform.Rotate(0, 0, maxVel * CurrentRotationSpeed * PowerMultiplier * Time.deltaTime);
+        transform.Rotate(0, 0, maxVel * Rotation * Time.deltaTime);
         if (smudger)
             smudger.Smudge(CurrentRotationSpeed);
     }
@@ -26,11 +28,11 @@ public class Propeller : MonoBehaviour
         id = i;
         if (left)
         {
-            PowerMultiplier = -1f;
+            Direction = -1f;
         }
         else
         {
-            PowerMultiplier = 1f;
+            Direction = 1f;
         }
         if (SmudgePrefab)
         {

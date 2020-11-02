@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class PrototypeSteeringDrone : SteeringDrone
+public class SteeringDronePrototype : SteeringDroneQuadrocopter
 {
     [Tooltip("Speed of moving wings")]
     public float wingsSpeed = 36f;
