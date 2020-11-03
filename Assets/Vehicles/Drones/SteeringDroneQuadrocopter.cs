@@ -6,9 +6,11 @@ public class SteeringDroneQuadrocopter : SteeringDrone
 {
     public PIDController stabilizator;
     public PIDController selfLeveler;
+    public PIDController stopper;
 
-    private PIDController[] stabilizators;
-    private PIDController[] selfLevelers;
+    protected PIDController[] stabilizators;
+    protected PIDController[] selfLevelers;
+    protected PIDController[] stoppers;
 
     protected override void CheckPropellers()
     {
@@ -93,11 +95,18 @@ public class SteeringDroneQuadrocopter : SteeringDrone
             stabilizators[i] = new PIDController();
             stabilizators[i].CopySettings(stabilizator);
         }
+        stoppers = new PIDController[3];
+        for (int i = 0; i < stoppers.Length; i++)
+        {
+            stoppers[i] = new PIDController();
+            stoppers[i].CopySettings(stopper);
+        }
     }
 
     protected override void ApplyPropellersThrust()
     {
         calcBaseSteeringRotationSpeedChange();
+        calcRotationStabilizeRotationSpeedChange();
         if (selfLeveling)
         {
             calcSelfLevelRotationSpeedChange();
@@ -116,14 +125,25 @@ public class SteeringDroneQuadrocopter : SteeringDrone
     }
     void calcBaseSteeringRotationSpeedChange()
     {
-        for (int i = 0; i < propellers.Length; i++)
-        {
-            propellers[i].CurrentRotationSpeed = thrust;
-        }
+        ClearMotors();
+        AddThrust(thrust);
         RotPitch(pitch);
         RotYaw(yaw);
         RotRoll(roll);
-
+    }
+    void ClearMotors()
+    {
+        for (int i = 0; i < propellers.Length; i++)
+        {
+            propellers[i].CurrentRotationSpeed = 0;
+        }
+    }
+    void AddThrust(float thrust_val)
+    {
+        propellers[0].CurrentRotationSpeed += thrust_val;
+        propellers[1].CurrentRotationSpeed += thrust_val;
+        propellers[2].CurrentRotationSpeed += thrust_val;
+        propellers[3].CurrentRotationSpeed += thrust_val;
     }
     void RotPitch(float pitch_val)
     {
@@ -146,6 +166,22 @@ public class SteeringDroneQuadrocopter : SteeringDrone
         propellers[2].CurrentRotationSpeed += roll_val;
         propellers[3].CurrentRotationSpeed += roll_val;
     }
+
+    void calcRotationStabilizeRotationSpeedChange()
+    {
+        if (Application.isEditor)
+        {
+            for (int i = 0; i < stabilizators.Length; i++)
+            {
+                stabilizators[i].CopySettings(stabilizator);
+            }
+        }
+        Vector3 localangularvelocity = transform.InverseTransformDirection(rigidbody.angularVelocity);
+        RotPitch(stabilizators[0].Regulate(-localangularvelocity.x));
+        RotYaw(stabilizators[1].Regulate(-localangularvelocity.y));
+        RotRoll(stabilizators[2].Regulate(localangularvelocity.z));
+    }
+
     void calcSelfLevelRotationSpeedChange()
     {
         float averageOfPropellersAltitude = calcAverageOfPropellersAltitude();
@@ -175,7 +211,10 @@ public class SteeringDroneQuadrocopter : SteeringDrone
         cor[3] += pitchRollCor[3] * roll + propellerAngleFromFlat[3] * (1 - roll);
         for (int i = 0; i < propellers.Length; i++)
         {
-            selfLevelers[i].CopySettings(selfLeveler);
+            if (Application.isEditor)
+            {
+                selfLevelers[i].CopySettings(selfLeveler);
+            }
             propellers[i].CurrentRotationSpeed += selfLevelers[i].Regulate(cor[i] / 2f);
         }
     }
@@ -189,18 +228,20 @@ public class SteeringDroneQuadrocopter : SteeringDrone
         }
         return averageOfPropellersAltitude / 4;
     }
+
     void calcStabilizeRotationSpeedChange()
     {
-        //rigidbody.AddTorque(rigidbody.angularVelocity * (-Time.deltaTime * stabVelFactor));
-        // // Debug.Log(rigidbody.angularVelocity.ToString() + " " + pitch + " " + roll + " " + yaw);
-
-        for (int i = 0; i < stabilizators.Length; i++)
+        if (Application.isEditor)
         {
-            stabilizators[i].CopySettings(stabilizator);
+            for (int i = 0; i < stoppers.Length; i++)
+            {
+                stoppers[i].CopySettings(stopper);
+            }
         }
-        Vector3 localangularvelocity = transform.InverseTransformDirection(rigidbody.angularVelocity);
-        RotPitch(stabilizators[0].Regulate(-localangularvelocity.x));
-        RotYaw(stabilizators[1].Regulate(-localangularvelocity.y));
-        RotRoll(stabilizators[2].Regulate(localangularvelocity.z));
+        Vector3 localVelocity = transform.InverseTransformDirection(new Vector3(rigidbody.velocity.x, 0, rigidbody.velocity.z));
+
+        RotRoll(stoppers[0].Regulate(-localVelocity.x));
+        AddThrust(stoppers[1].Regulate(-rigidbody.velocity.y));
+        RotPitch(stoppers[2].Regulate(-localVelocity.z));
     }
 }
