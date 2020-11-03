@@ -55,7 +55,10 @@ public abstract class SteeringDrone : MonoBehaviour
 
     void Update()
     {
-        RotatePropellers(propellers);
+        if (motorsOn)
+        {
+            RotatePropellers(propellers);
+        }
     }
 
     void RotatePropellers(Propeller[] _propellers)

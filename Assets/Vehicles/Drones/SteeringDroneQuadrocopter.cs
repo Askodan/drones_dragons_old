@@ -4,6 +4,11 @@ using UnityEngine;
 
 public class SteeringDroneQuadrocopter : SteeringDrone
 {
+    public PIDController stabilizator;
+    public PIDController selfLeveler;
+
+    private PIDController[] stabilizators;
+    private PIDController[] selfLevelers;
 
     protected override void CheckPropellers()
     {
@@ -74,6 +79,20 @@ public class SteeringDroneQuadrocopter : SteeringDrone
         }
         propellersCenter /= 4f;
         propellerDistFromCenter = Vector3.Distance(propellersCenter, propellers[0].transform.position);
+
+        // create pid controllers
+        selfLevelers = new PIDController[4];
+        for (int i = 0; i < selfLevelers.Length; i++)
+        {
+            selfLevelers[i] = new PIDController();
+            selfLevelers[i].CopySettings(selfLeveler);
+        }
+        stabilizators = new PIDController[3];
+        for (int i = 0; i < stabilizators.Length; i++)
+        {
+            stabilizators[i] = new PIDController();
+            stabilizators[i].CopySettings(stabilizator);
+        }
     }
 
     protected override void ApplyPropellersThrust()
@@ -91,24 +110,42 @@ public class SteeringDroneQuadrocopter : SteeringDrone
         {
             Vector3 thrustVec = new Vector3(0, 0, propellers[i].CurrentRotationSpeed * forceFactor);
             rigidbody.AddForceAtPosition(propellers[i].transform.rotation * thrustVec, propellers[i].transform.position);
-            //rigidbody.AddTorque(transform.rotation * new Vector3(0, propellers[i].Rotation, 0));
+            rigidbody.AddTorque(transform.rotation * new Vector3(0, propellers[i].Rotation, 0));
             //Debug.DrawLine (propellers [i].position, propellers [i].position + propellers [i].rotation * thrustVec);
         }
-        rigidbody.AddTorque(transform.rotation * new Vector3(0, yaw, 0));
     }
-
     void calcBaseSteeringRotationSpeedChange()
     {
         for (int i = 0; i < propellers.Length; i++)
         {
             propellers[i].CurrentRotationSpeed = thrust;
         }
-        propellers[0].CurrentRotationSpeed += -pitch - roll - yaw;
-        propellers[1].CurrentRotationSpeed += pitch - roll + yaw;
-        propellers[2].CurrentRotationSpeed += -pitch + roll + yaw;
-        propellers[3].CurrentRotationSpeed += pitch + roll - yaw;
-    }
+        RotPitch(pitch);
+        RotYaw(yaw);
+        RotRoll(roll);
 
+    }
+    void RotPitch(float pitch_val)
+    {
+        propellers[0].CurrentRotationSpeed += -pitch_val;
+        propellers[1].CurrentRotationSpeed += pitch_val;
+        propellers[2].CurrentRotationSpeed += -pitch_val;
+        propellers[3].CurrentRotationSpeed += pitch_val;
+    }
+    void RotYaw(float yaw_val)
+    {
+        propellers[0].CurrentRotationSpeed += -yaw_val;
+        propellers[1].CurrentRotationSpeed += yaw_val;
+        propellers[2].CurrentRotationSpeed += yaw_val;
+        propellers[3].CurrentRotationSpeed += -yaw_val;
+    }
+    void RotRoll(float roll_val)
+    {
+        propellers[0].CurrentRotationSpeed += -roll_val;
+        propellers[1].CurrentRotationSpeed += -roll_val;
+        propellers[2].CurrentRotationSpeed += roll_val;
+        propellers[3].CurrentRotationSpeed += roll_val;
+    }
     void calcSelfLevelRotationSpeedChange()
     {
         float averageOfPropellersAltitude = calcAverageOfPropellersAltitude();
@@ -138,7 +175,8 @@ public class SteeringDroneQuadrocopter : SteeringDrone
         cor[3] += pitchRollCor[3] * roll + propellerAngleFromFlat[3] * (1 - roll);
         for (int i = 0; i < propellers.Length; i++)
         {
-            propellers[i].CurrentRotationSpeed += cor[i] / 2f * selfLevelFactor;
+            selfLevelers[i].CopySettings(selfLeveler);
+            propellers[i].CurrentRotationSpeed += selfLevelers[i].Regulate(cor[i] / 2f);
         }
     }
 
@@ -153,12 +191,16 @@ public class SteeringDroneQuadrocopter : SteeringDrone
     }
     void calcStabilizeRotationSpeedChange()
     {
-        rigidbody.AddTorque(rigidbody.angularVelocity * (-Time.deltaTime * stabVelFactor));
-        // Debug.Log(rigidbody.angularVelocity.ToString() + " " + pitch + " " + roll + " " + yaw);
-        // Vector3 factorizedAngularVelocity = rigidbody.angularVelocity * stabVelFactor;
-        // propellers[0].CurrentRotationSpeed -= factorizedAngularVelocity.x - factorizedAngularVelocity.z;
-        // propellers[1].CurrentRotationSpeed -= -factorizedAngularVelocity.x - factorizedAngularVelocity.z;
-        // propellers[2].CurrentRotationSpeed -= factorizedAngularVelocity.x + factorizedAngularVelocity.z;
-        // propellers[3].CurrentRotationSpeed -= -factorizedAngularVelocity.x + factorizedAngularVelocity.z;
+        //rigidbody.AddTorque(rigidbody.angularVelocity * (-Time.deltaTime * stabVelFactor));
+        // // Debug.Log(rigidbody.angularVelocity.ToString() + " " + pitch + " " + roll + " " + yaw);
+
+        for (int i = 0; i < stabilizators.Length; i++)
+        {
+            stabilizators[i].CopySettings(stabilizator);
+        }
+        Vector3 localangularvelocity = transform.InverseTransformDirection(rigidbody.angularVelocity);
+        RotPitch(stabilizators[0].Regulate(-localangularvelocity.x));
+        RotYaw(stabilizators[1].Regulate(-localangularvelocity.y));
+        RotRoll(stabilizators[2].Regulate(localangularvelocity.z));
     }
 }
