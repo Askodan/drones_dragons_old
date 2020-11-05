@@ -38,7 +38,7 @@ public class SteeringDroneQuadrocopter : SteeringDrone
 
     protected override void Setup()
     {
-        //order x+z+, x+z-, x-z+, x-z-
+        // Sort propellers in order x+z+, x+z-, x-z+, x-z-
         Propeller[] screws = new Propeller[propellers.Length];
         for (int i = 0; i < propellers.Length; i++)
         {
@@ -103,7 +103,7 @@ public class SteeringDroneQuadrocopter : SteeringDrone
         }
     }
 
-    protected override void ApplyPropellersThrust()
+    protected override void CalculatePropellersSpeed()
     {
         calcBaseSteeringRotationSpeedChange();
         calcRotationStabilizeRotationSpeedChange();
@@ -115,14 +115,8 @@ public class SteeringDroneQuadrocopter : SteeringDrone
         {
             calcStabilizeRotationSpeedChange();
         }
-        for (int i = 0; i < propellers.Length; i++)
-        {
-            Vector3 thrustVec = new Vector3(0, 0, propellers[i].CurrentRotationSpeed * forceFactor);
-            rigidbody.AddForceAtPosition(propellers[i].transform.rotation * thrustVec, propellers[i].transform.position);
-            rigidbody.AddTorque(transform.rotation * new Vector3(0, propellers[i].Rotation, 0));
-            //Debug.DrawLine (propellers [i].position, propellers [i].position + propellers [i].rotation * thrustVec);
-        }
     }
+
     void calcBaseSteeringRotationSpeedChange()
     {
         ClearMotors();

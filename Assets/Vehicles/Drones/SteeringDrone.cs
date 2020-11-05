@@ -3,35 +3,68 @@ using System.Collections;
 
 public abstract class SteeringDrone : MonoBehaviour
 {
-    protected Propeller[] propellers;
-    //ustawienia elektroniki(wzmocnień)
+    // main amplification
     public float pitchFactor = 0.03f;
     public float rollFactor = 0.03f;
     public float yawFactor = 0.05f;
     public float stabVelFactor = 1f;
     public float selfLevelFactor = 0.2f;
-    //ustawienia fizyki
     public float forceFactor = 3.6f;
-
-    protected float thrust;
-    protected float pitch;
-    protected float roll;
-    protected float yaw;
-
-    protected new Rigidbody rigidbody;
-    protected float zeroThrust;
-
-    public bool keepAltitude { get; protected set; }
-
-    public bool stabilize { get; protected set; }
-
+    // modes
     public bool motorsOn { get; protected set; }
-
-    public bool selfLeveling { get; protected set; }
-
-    [HideInInspector] public VehicleLight flashLight;
-    protected float propellerDistFromCenter;
-    protected CenterOfMass centerOfMass;
+    private bool _stabilize;
+    public bool stabilize
+    {
+        get { return _stabilize; }
+        protected set
+        {
+            _stabilize = value;
+            if (_stabilize)
+            {
+                keepAltitude = true;
+                selfLeveling = true;
+            }
+        }
+    }
+    private bool _keepAltitude;
+    public bool keepAltitude
+    {
+        get { return _keepAltitude; }
+        protected set
+        {
+            _keepAltitude = value;
+            if (!_keepAltitude)
+            {
+                stabilize = false;
+            }
+        }
+    }
+    private bool _selfLeveling;
+    public bool selfLeveling
+    {
+        get { return _selfLeveling; }
+        protected set
+        {
+            _selfLeveling = value;
+            if (!_selfLeveling)
+            {
+                stabilize = false;
+            }
+        }
+    }
+    // steering values
+    protected float thrust { get; set; }
+    protected float pitch { get; set; }
+    protected float roll { get; set; }
+    protected float yaw { get; set; }
+    // one time calculated
+    protected float zeroThrust { get; set; }
+    protected float propellerDistFromCenter { get; set; }
+    // references
+    public VehicleLight flashLight { get; protected set; }
+    protected new Rigidbody rigidbody { get; set; }
+    protected Propeller[] propellers { get; set; }
+    protected CenterOfMass centerOfMass { get; set; }
 
     void Awake()
     {
@@ -92,13 +125,13 @@ public abstract class SteeringDrone : MonoBehaviour
         {
             keepAltitude = !keepAltitude;
         }
-        if (keepAltitude)
-        {
-            thrust = Mathf.Clamp(thrust + zeroThrust, -1, 1);
-        }
         if (butDown_SelfLeveling)
         {
             selfLeveling = !selfLeveling;
+        }
+        if (keepAltitude)
+        {
+            thrust = Mathf.Clamp(thrust + zeroThrust, -1, 1);
         }
     }
 
@@ -106,11 +139,23 @@ public abstract class SteeringDrone : MonoBehaviour
     {
         if (motorsOn)
         {
+            CalculatePropellersSpeed();
             ApplyPropellersThrust();
         }
     }
 
-    protected abstract void ApplyPropellersThrust();
+    protected abstract void CalculatePropellersSpeed();
+
+    protected void ApplyPropellersThrust()
+    {
+        for (int i = 0; i < propellers.Length; i++)
+        {
+            Vector3 thrustVec = new Vector3(0, 0, propellers[i].CurrentRotationSpeed * forceFactor);
+            rigidbody.AddForceAtPosition(propellers[i].transform.rotation * thrustVec, propellers[i].transform.position);
+            rigidbody.AddTorque(transform.rotation * new Vector3(0, propellers[i].Rotation, 0));
+            //Debug.DrawLine (propellers [i].position, propellers [i].position + propellers [i].rotation * thrustVec);
+        }
+    }
 }
 
 public enum DroneType
