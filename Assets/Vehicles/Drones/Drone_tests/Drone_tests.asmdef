@@ -1,9 +1,23 @@
-﻿{
+{
     "name": "Drone_tests",
-    "optionalUnityReferences": [
-        "TestAssemblies"
+    "references": [
+        "GUID:27619889b8ba8c24980f49ee34dbb44a",
+        "GUID:0acc523941302664db1f4e527237feb3",
+        "GUID:3274641e5eeeb68478b4199795429300"
     ],
     "includePlatforms": [
         "Editor"
-    ]
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": true,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
 }

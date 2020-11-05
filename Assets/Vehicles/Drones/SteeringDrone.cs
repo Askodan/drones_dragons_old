@@ -33,7 +33,11 @@ public abstract class SteeringDrone : MonoBehaviour
         protected set
         {
             _keepAltitude = value;
-            if (!_keepAltitude)
+            if (_keepAltitude)
+            {
+                targetAltitude = altitudeMeter.altitude;
+            }
+            else
             {
                 stabilize = false;
             }
@@ -57,6 +61,7 @@ public abstract class SteeringDrone : MonoBehaviour
     protected float pitch { get; set; }
     protected float roll { get; set; }
     protected float yaw { get; set; }
+    protected float targetAltitude{ get; set; }
     // one time calculated
     protected float zeroThrust { get; set; }
     protected float propellerDistFromCenter { get; set; }
@@ -65,6 +70,9 @@ public abstract class SteeringDrone : MonoBehaviour
     protected new Rigidbody rigidbody { get; set; }
     protected Propeller[] propellers { get; set; }
     protected CenterOfMass centerOfMass { get; set; }
+    protected Gyroscope gyroscope { get; set; }
+    protected SpeedMeter speedMeter { get; set; }
+    protected AltitudeMeter altitudeMeter { get; set; }
 
     void Awake()
     {
@@ -81,6 +89,9 @@ public abstract class SteeringDrone : MonoBehaviour
         rigidbody.centerOfMass = centerOfMass.transform.localPosition;
         propellers = GetComponentsInChildren<Propeller>();
         flashLight = GetComponentInChildren<VehicleLight>();
+        gyroscope = GetComponentInChildren<Gyroscope>();
+        speedMeter = GetComponentInChildren<SpeedMeter>();
+        altitudeMeter = GetComponentInChildren<AltitudeMeter>();
     }
 
     protected abstract void CheckPropellers();
@@ -106,9 +117,9 @@ public abstract class SteeringDrone : MonoBehaviour
         bool butDown_Lights, bool butDown_Motors, bool butDown_Stabilize, bool butDown_KeepAltitude, bool butDown_SelfLeveling)
     {
         thrust = axis_Thrust;
-        pitch = axis_Pitch * pitchFactor;
-        roll = axis_Roll * rollFactor;
-        yaw = axis_Yaw * yawFactor;
+        pitch = axis_Pitch;
+        roll = axis_Roll;
+        yaw = axis_Yaw;
         if (butDown_Lights)
         {
             flashLight.Change();
@@ -128,10 +139,6 @@ public abstract class SteeringDrone : MonoBehaviour
         if (butDown_SelfLeveling)
         {
             selfLeveling = !selfLeveling;
-        }
-        if (keepAltitude)
-        {
-            thrust = Mathf.Clamp(thrust + zeroThrust, -1, 1);
         }
     }
 
