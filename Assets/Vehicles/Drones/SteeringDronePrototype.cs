@@ -8,255 +8,177 @@ public class SteeringDronePrototype : SteeringDroneQuadrocopter
     public float wingsSpeed = 36f;
     [Tooltip("Power of additional propellers")]
     public float turboSpeed = 50f;
-
+    public Vector3 FrontRotationAuto = new Vector3(0f, 0f, 270f);
+    public Vector3 FrontRotationManual = new Vector3(0f, 0f, 135f);
+    public Vector3 RearRotationAuto = new Vector3(0f, 0f, 0f);
+    public Vector3 RearRotationManual = new Vector3(0f, 0f, 315f);
     private Coroutine moveWingsCoroutine;
-    private int number = 4;
-    // Start is called before the first frame update
-    void Awake()
+    private bool isMoving;
+    protected int RightFrontTurboPropellersIndex = -1;
+    protected int RightRearTurboPropellersIndex = -1;
+    protected int LeftRearTurboPropellersIndex = -1;
+    protected int LeftFrontTurboPropellersIndex = -1;
+    protected override void CheckPropellers()
     {
-        SetupPrototype();
-        zeroThrust = -Physics.gravity.y / 4f * GetComponent<Rigidbody>().mass / forceFactor;
-    }
-    public void Steer(float axis_Thrust, float axis_Pitch, float axis_Roll, float axis_Yaw, float axis_Turbo,
-        bool butDown_Lights, bool butDown_Motors, bool butDown_Stabilize, bool butDown_KeepAltitude, bool butDown_SelfLeveling)
-    {
-        if (motorsOn)
+        if (propellers.Length != 8)
         {
-            thrust = axis_Thrust;
-            pitch = axis_Pitch * pitchFactor;
-            roll = axis_Roll * rollFactor;
-            yaw = axis_Yaw * yawFactor;
-
-            if (keepAltitude)
-            {
-                thrust = Mathf.Clamp(thrust + zeroThrust, -1, 1);
-            }
-            for (int i = 0; i < propellers.Length - number; i++)
-            {
-                propellers[i].CurrentRotationSpeed = thrust;
-            }
-            propellers[0].CurrentRotationSpeed += -pitch - roll;
-            propellers[1].CurrentRotationSpeed += pitch - roll;
-            propellers[2].CurrentRotationSpeed += -pitch + roll;
-            propellers[3].CurrentRotationSpeed += pitch + roll;
-
-        }
-        if (butDown_Lights)
-        {
-            flashLight.Change();
-        }
-        if (butDown_Motors)
-        {
-            motorsOn = !motorsOn;
-            if (!motorsOn)
-            {
-                for (int i = 0; i < propellers.Length; i++)
-                {
-                    propellers[i].CurrentRotationSpeed = 0f;
-                }
-            }
-        }
-        if (butDown_Stabilize)
-        {
-            stabilize = !stabilize;
-        }
-        if (butDown_KeepAltitude)
-        {
-            keepAltitude = !keepAltitude;
-        }
-        if (butDown_SelfLeveling)
-        {
-            //if (moveWingsCoroutine != null)
-            //    StopCoroutine(moveWingsCoroutine);
-            //moveWingsCoroutine = StartCoroutine(MoveWings());
-            selfLeveling = !selfLeveling;
-        }
-        float tempfloat = axis_Turbo * turboSpeed;
-        propellers[4].CurrentRotationSpeed = -tempfloat;
-        propellers[5].CurrentRotationSpeed = tempfloat;
-        propellers[6].CurrentRotationSpeed = -tempfloat;
-        propellers[7].CurrentRotationSpeed = tempfloat;
-
-        if (butDown_SelfLeveling)
-        {
-            if (moveWingsCoroutine != null)
-                StopCoroutine(moveWingsCoroutine);
-            moveWingsCoroutine = StartCoroutine(MoveWings());
-            selfLeveling = !selfLeveling;
+            Debug.LogError("Number of propellers doesn't match! Should be 8 is " + propellers.Length.ToString());
         }
     }
-    float calcAverageOfPropellersAltitude()
+    protected override void Setup()
     {
-        float averageOfPropellersAltitude = 0f;
-        for (int i = 0; i < propellers.Length - number; i++)
-        {
-            averageOfPropellersAltitude += propellers[i].transform.position.y;
-        }
-        return averageOfPropellersAltitude / 4;
+        base.Setup();
+        SelfLevelingChanged += WingsUp;
+        WingsUp(selfLeveling);
     }
-
-    public void ApplyPropellersThrust()
+    private void WingsUp(bool up)
     {
-
-        float[] cor = new float[propellers.Length];
-        if (selfLeveling)
-        {
-            float averageOfPropellersAltitude = calcAverageOfPropellersAltitude();
-
-            float[] propellerAngleFromFlat = new float[4];
-            for (int i = 0; i < propellers.Length - number; i++)
-            {
-                propellerAngleFromFlat[i] = Mathf.Asin((averageOfPropellersAltitude - propellers[i].transform.position.y) / propellerDistFromCenter);
-            }
-            float[] pitchRollCor = new float[4];
-            //x+
-            pitchRollCor[0] = (propellerAngleFromFlat[0] + propellerAngleFromFlat[1]) / 2f;
-            //x-
-            pitchRollCor[1] = (propellerAngleFromFlat[2] + propellerAngleFromFlat[3]) / 2f;
-            //z+
-            pitchRollCor[2] = (propellerAngleFromFlat[0] + propellerAngleFromFlat[2]) / 2f;
-            //z-
-            pitchRollCor[3] = (propellerAngleFromFlat[1] + propellerAngleFromFlat[3]) / 2f;
-            cor[0] = pitchRollCor[0] * pitch + propellerAngleFromFlat[0] * (1 - pitch);
-            cor[1] = pitchRollCor[0] * pitch + propellerAngleFromFlat[1] * (1 - pitch);
-            cor[2] = pitchRollCor[1] * pitch + propellerAngleFromFlat[2] * (1 - pitch);
-            cor[3] = pitchRollCor[1] * pitch + propellerAngleFromFlat[3] * (1 - pitch);
-            cor[0] += pitchRollCor[2] * roll + propellerAngleFromFlat[0] * (1 - roll);
-            cor[1] += pitchRollCor[3] * roll + propellerAngleFromFlat[1] * (1 - roll);
-            cor[2] += pitchRollCor[2] * roll + propellerAngleFromFlat[2] * (1 - roll);
-            cor[3] += pitchRollCor[3] * roll + propellerAngleFromFlat[3] * (1 - roll);
-            for (int i = 0; i < propellers.Length; i++)
-            {
-                cor[i] /= 2;
-            }
-        }
+        if (moveWingsCoroutine != null)
+            StopCoroutine(moveWingsCoroutine);
+        moveWingsCoroutine = StartCoroutine(MoveWings(!up));
+    }
+    protected override void AssignPropellersIndexes()
+    {
+        float[] distances = new float[propellers.Length];
+        float average_distance = CalcAveragePropellersDistanceFromCenter(distances);
         for (int i = 0; i < propellers.Length; i++)
         {
-            Vector3 thrustVec = new Vector3(0, 0, propellers[i].CurrentRotationSpeed * forceFactor + cor[i] * selfLevelFactor);
-            rigidbody.AddForceAtPosition(propellers[i].transform.rotation * thrustVec, propellers[i].transform.position);
-            //Debug.DrawLine (propellers [i].position, propellers [i].position + propellers [i].rotation * thrustVec);
-        }
-        if (stabilize)
-        {
-            rigidbody.AddTorque(rigidbody.angularVelocity * (-Time.deltaTime * stabVelFactor));
-        }
-        rigidbody.AddTorque(transform.rotation * new Vector3(0, yaw, 0));
-    }
-
-    void SetupPrototype()
-    {
-        //order (x+z+, x+z-, x-z+, x-z-), close +4 
-        Propeller[] screws = new Propeller[propellers.Length];
-        float[] distances = new float[propellers.Length], dists = new float[2];
-        bool[] dist1 = new bool[propellers.Length];
-        distances[0] = Vector3.Distance(propellers[0].transform.position, transform.position);
-        dist1[0] = true;
-        for (int i = 1; i < propellers.Length; i++)
-        {
-            float distance = Vector3.Distance(propellers[i].transform.position, transform.position);
-            distances[i] = distance;
-            if (distance > distances[0] * 0.75f && distance < distances[0] * 1.5f)
+            Vector3 pos = transform.InverseTransformPoint(propellers[i].transform.position);
+            propellers[i].Setup(IsRight(pos) ^ IsFront(pos));
+            if (distances[i] < average_distance)
             {
-                dist1[i] = dist1[0];
-                dists[0] += distance;
-            }
-            else
-            {
-                dist1[i] = !dist1[0];
-                dists[1] += distance;
-            }
-        }
-        bool close;
-        if (dists[0] > dists[1])
-        {
-            close = false;
-        }
-        else
-        {
-            close = true;
-        }
-        for (int i = 0; i < propellers.Length; i++)
-        {
-            int j = 0;
-            if (!close)
-            {
-                if (dist1[i])
+                if (IsRight(pos))
                 {
-                    j += 4;
-                }
-            }
-            else
-            {
-                if (!dist1[i])
-                {
-                    j += 4;
-                }
-            }
-            if (transform.InverseTransformPoint(propellers[i].transform.position).x > 0)
-            {
-                if (transform.InverseTransformPoint(propellers[i].transform.position).z > 0)
-                {
-
-                    screws[j + 0] = propellers[i];
-                }
-                else
-                {
-                    screws[j + 1] = propellers[i];
-                }
-            }
-            else
-            {
-                if (transform.InverseTransformPoint(propellers[i].transform.position).z > 0)
-                {
-                    screws[j + 2] = propellers[i];
-                }
-                else
-                {
-                    screws[j + 3] = propellers[i];
-                }
-            }
-        }
-        propellers = screws;
-    }
-    IEnumerator MoveWings()
-    {
-        if (!selfLeveling)
-        {
-            while (propellers[0].transform.parent.localRotation != Quaternion.Euler(new Vector3(0f, 0f, 270f)))
-            {
-                for (int i = number; i < propellers.Length; i++)
-                {
-
-                    if (i == 2 + number || i == 0 + number)
+                    if (IsFront(pos))
                     {
-                        propellers[i].transform.parent.localRotation = Quaternion.RotateTowards(propellers[i].transform.parent.localRotation, Quaternion.Euler(new Vector3(0f, 0f, 270f)), Time.deltaTime * wingsSpeed);
+                        RightFrontPropellersIndex = i;
                     }
                     else
                     {
-                        propellers[i].transform.parent.localRotation = Quaternion.RotateTowards(propellers[i].transform.parent.localRotation, Quaternion.Euler(new Vector3(0f, 0f, 0f)), Time.deltaTime * wingsSpeed);
+                        RightRearPropellersIndex = i;
                     }
                 }
+                else
+                {
+                    if (IsFront(pos))
+                    {
+                        LeftFrontPropellersIndex = i;
+                    }
+                    else
+                    {
+                        LeftRearPropellersIndex = i;
+                    }
+                }
+            }
+            else
+            {
+                if (IsRight(pos))
+                {
+                    if (IsFront(pos))
+                    {
+                        RightFrontTurboPropellersIndex = i;
+                    }
+                    else
+                    {
+                        RightRearTurboPropellersIndex = i;
+                    }
+                }
+                else
+                {
+                    if (IsFront(pos))
+                    {
+                        LeftFrontTurboPropellersIndex = i;
+                    }
+                    else
+                    {
+                        LeftRearTurboPropellersIndex = i;
+                    }
+                }
+            }
+        }
+    }
+    protected float CalcAveragePropellersDistanceFromCenter(float[] distances)
+    {
+        float sum_of_distances = 0;
+        for (int i = 0; i < propellers.Length; i++)
+        {
+            distances[i] = Vector3.Distance(propellers[i].transform.position, transform.TransformPoint(rigidbody.centerOfMass));
+            sum_of_distances += distances[i];
+        }
+        return sum_of_distances / distances.Length;
+    }
+    protected override void CheckPropellerIndexes()
+    {
+        base.CheckPropellerIndexes();
+        if (RightFrontTurboPropellersIndex < 0 ||
+            RightRearTurboPropellersIndex < 0 ||
+            LeftFrontTurboPropellersIndex < 0 ||
+            LeftRearTurboPropellersIndex < 0)
+        {
+            Debug.LogError("Some turbo propellers indexes weren't found");
+        }
+    }
+    IEnumerator MoveWings(bool up)
+    {
+        isMoving = true;
+        if (up)
+        {
+            while (CheckRotateWing(LeftFrontTurboPropellersIndex, FrontRotationAuto) &&
+                   CheckRotateWing(RightFrontTurboPropellersIndex, FrontRotationAuto) &&
+                   CheckRotateWing(LeftRearTurboPropellersIndex, RearRotationAuto) &&
+                   CheckRotateWing(RightRearTurboPropellersIndex, RearRotationAuto))
+            {
+                RotateWing(LeftFrontTurboPropellersIndex, FrontRotationAuto);
+                RotateWing(RightFrontTurboPropellersIndex, FrontRotationAuto);
+                RotateWing(LeftRearTurboPropellersIndex, RearRotationAuto);
+                RotateWing(RightRearTurboPropellersIndex, RearRotationAuto);
                 yield return null;
             }
         }
         else
         {
-            while (propellers[0].transform.parent.localRotation != Quaternion.Euler(new Vector3(0f, 0f, 135f)))
+            while (CheckRotateWing(LeftFrontTurboPropellersIndex, FrontRotationManual) &&
+                   CheckRotateWing(RightFrontTurboPropellersIndex, FrontRotationManual) &&
+                   CheckRotateWing(LeftRearTurboPropellersIndex, RearRotationManual) &&
+                   CheckRotateWing(RightRearTurboPropellersIndex, RearRotationManual))
             {
-                for (int i = number; i < propellers.Length; i++)
-                {
-
-                    if (i == 2 + number || i == 0 + number)
-                    {
-                        propellers[i].transform.parent.localRotation = Quaternion.RotateTowards(propellers[i].transform.parent.localRotation, Quaternion.Euler(new Vector3(0f, 0f, 135f)), Time.deltaTime * wingsSpeed);
-                    }
-                    else
-                    {
-                        propellers[i].transform.parent.localRotation = Quaternion.RotateTowards(propellers[i].transform.parent.localRotation, Quaternion.Euler(new Vector3(0f, 0f, 315f)), Time.deltaTime * wingsSpeed);
-                    }
-                }
+                RotateWing(LeftFrontTurboPropellersIndex, FrontRotationManual);
+                RotateWing(RightFrontTurboPropellersIndex, FrontRotationManual);
+                RotateWing(LeftRearTurboPropellersIndex, RearRotationManual);
+                RotateWing(RightRearTurboPropellersIndex, RearRotationManual);
                 yield return null;
             }
         }
+        isMoving = false;
+    }
+    private bool CheckRotateWing(int PropellerIndex, Vector3 TargetRotation)
+    {
+        return propellers[PropellerIndex].transform.parent.localRotation != Quaternion.Euler(TargetRotation);
+    }
+    private void RotateWing(int PropellerIndex, Vector3 TargetRotation)
+    {
+        propellers[PropellerIndex].transform.parent.localRotation = Quaternion.RotateTowards(
+                    propellers[PropellerIndex].transform.parent.localRotation,
+                    Quaternion.Euler(TargetRotation),
+                    Time.deltaTime * wingsSpeed);
+    }
+    protected override void CalculatePropellersSpeed()
+    {
+        base.CalculatePropellersSpeed();
+        CalcTurbo();
+    }
+    protected virtual void CalcTurbo()
+    {
+        if (!isMoving)
+        {
+            RotTurbo(turbo * turboSpeed);
+        }
+    }
+    protected virtual void RotTurbo(float turbo_val)
+    {
+        propellers[RightFrontTurboPropellersIndex].CurrentRotationSpeed = -turbo_val;
+        propellers[RightRearTurboPropellersIndex].CurrentRotationSpeed = -turbo_val;
+        propellers[LeftFrontTurboPropellersIndex].CurrentRotationSpeed = -turbo_val;
+        propellers[LeftRearTurboPropellersIndex].CurrentRotationSpeed = -turbo_val;
     }
 }

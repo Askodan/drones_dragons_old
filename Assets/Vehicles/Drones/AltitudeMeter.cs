@@ -5,7 +5,7 @@ public class AltitudeMeter : MonoBehaviour
 {
     public LayerMask mask;
     public float height { get; private set; }
-    public float altitude{ get; private set; }
+    public float altitude { get { return transform.position.y; } }
     public float offset;
     private void FixedUpdate()
     {
@@ -14,6 +14,5 @@ public class AltitudeMeter : MonoBehaviour
         {
             height = hit.distance;
         }
-        altitude = transform.position.y;
     }
 }

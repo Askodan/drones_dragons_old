@@ -30,9 +30,9 @@ public class PIDController
     [Tooltip("Wzmocnienie członu D")]
     public float derivativeConst = 0.2f;
     /// <summary>
-    /// Makes clamps output to <-1, 1>.
+    /// Makes clamps output to <-overallAmplify, overallAmplify>.
     /// </summary>
-    [Tooltip("Ograniczenie wyjścia do -1 - 1")]
+    [Tooltip("Ograniczenie wyjścia do [-overallAmplify, overallAmplify]")]
     public bool BIBO;
     float prevError;
     /// <summary>
@@ -74,5 +74,14 @@ public class PIDController
         maxIntegralAbs = controller.maxIntegralAbs;
         derivativeConst = controller.derivativeConst;
         BIBO = controller.BIBO;
+    }
+    public void CopySettings(PIDControllerFactory factory)
+    {
+        overallAmplify = factory.overallAmplify;
+        proportionalConst = factory.proportionalConst;
+        integralConst = factory.integralConst;
+        maxIntegralAbs = factory.maxIntegralAbs;
+        derivativeConst = factory.derivativeConst;
+        BIBO = factory.BIBO;
     }
 }

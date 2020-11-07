@@ -8,8 +8,6 @@ public class Propeller : MonoBehaviour
     private float currentRotationSpeed;
     public float CurrentRotationSpeed { get { return currentRotationSpeed; } set { currentRotationSpeed = Mathf.Clamp(value, -1f, 1f); } }
     public float Rotation { get { return Direction * CurrentRotationSpeed; } }
-    public int ID { get; }
-    private int id;
     private float Direction { get; set; }
     private SmudgeRotation smudger;
     private float maxVel = 18000f;
@@ -23,9 +21,8 @@ public class Propeller : MonoBehaviour
         if (smudger)
             smudger.Smudge(CurrentRotationSpeed);
     }
-    public void Setup(bool left, int i)
+    public void Setup(bool left)
     {
-        id = i;
         if (left)
         {
             Direction = -1f;
@@ -41,12 +38,13 @@ public class Propeller : MonoBehaviour
             smudger.transform.localPosition = Vector3.zero;
             if (left)
             {
-                smudger.transform.localRotation = Quaternion.Euler(0f, 180f, 80f);
+                smudger.transform.localRotation = Quaternion.Euler(0f, 180f, 90f);
             }
             else
             {
                 smudger.transform.localRotation = Quaternion.identity;
             }
+            smudger.Smudge(CurrentRotationSpeed);
         }
     }
 }
