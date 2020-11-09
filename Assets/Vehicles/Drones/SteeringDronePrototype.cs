@@ -176,9 +176,9 @@ public class SteeringDronePrototype : SteeringDroneQuadrocopter
     }
     protected virtual void RotTurbo(float turbo_val)
     {
-        motors[RightFrontTurboMotorIndex].TargetRotationSpeed = -turbo_val;
-        motors[RightRearTurboMotorIndex].TargetRotationSpeed = -turbo_val;
-        motors[LeftFrontTurboMotorIndex].TargetRotationSpeed = -turbo_val;
-        motors[LeftRearTurboMotorIndex].TargetRotationSpeed = -turbo_val;
+        motors[RightFrontTurboMotorIndex].TargetThrust = -turbo_val;
+        motors[RightRearTurboMotorIndex].TargetThrust = -turbo_val;
+        motors[LeftFrontTurboMotorIndex].TargetThrust = -turbo_val;
+        motors[LeftRearTurboMotorIndex].TargetThrust = -turbo_val;
     }
 }

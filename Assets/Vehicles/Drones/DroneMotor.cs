@@ -4,31 +4,33 @@ using UnityEngine;
 
 public class DroneMotor : MonoBehaviour
 {
-    private float targetRotationSpeed;
-    public float TargetRotationSpeed
+    private float targetThrust;
+    public float TargetThrust
     {
-        get { return targetRotationSpeed; }
+        get { return targetThrust; }
         set
         {
-            targetRotationSpeed = Mathf.Clamp(value, -1f, 1f);
+            targetThrust = Mathf.Clamp(value, -1f, 1f);
         }
     }
-    public float CurrentRotationSpeed { get; private set; }
-    public float Rotation { get { return Direction * CurrentRotationSpeed; } }
-    private float Direction { get; set; }
-    public float Speed { get { return maxVel * Rotation; } }
+    public AnimationCurve RotationSpeedByThrust;
+    public float CurrentThrust { get; private set; }
 
-    public float maxVel = 18000f;
-    public float acceleration = 100f;
+    public float Rotation { get { return Direction * CurrentThrust; } }
+    private float Direction { get; set; }
+    public float Speed { get { return maxVel * Direction * RotationSpeedByThrust.Evaluate(Mathf.Abs(CurrentThrust)); } }
+
+    public float maxVel = 5000f;
+    public float acceleration = 20000f;
     private Propeller propeller;
     private MotorSounds motorSounds;
     private void Update()
     {
-        CurrentRotationSpeed = Mathf.MoveTowards(CurrentRotationSpeed, targetRotationSpeed, acceleration / maxVel * Time.deltaTime);
+        CurrentThrust = Mathf.MoveTowards(CurrentThrust, targetThrust, acceleration / maxVel * Time.deltaTime);
     }
     public void Rotate()
     {
-        propeller.Rotate(Speed, CurrentRotationSpeed);
+        propeller.Rotate(Speed, CurrentThrust);
         motorSounds?.MakeSound(Speed);
     }
 

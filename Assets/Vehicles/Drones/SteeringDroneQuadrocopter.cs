@@ -89,30 +89,30 @@ public class SteeringDroneQuadrocopter : SteeringDrone
     }
     protected override void AddThrust(float thrust_val)
     {
-        motors[RightFrontMotorIndex].TargetRotationSpeed += thrust_val;
-        motors[RightRearMotorIndex].TargetRotationSpeed += thrust_val;
-        motors[LeftFrontMotorIndex].TargetRotationSpeed += thrust_val;
-        motors[LeftRearMotorIndex].TargetRotationSpeed += thrust_val;
+        motors[RightFrontMotorIndex].TargetThrust += thrust_val;
+        motors[RightRearMotorIndex].TargetThrust += thrust_val;
+        motors[LeftFrontMotorIndex].TargetThrust += thrust_val;
+        motors[LeftRearMotorIndex].TargetThrust += thrust_val;
     }
     protected override void RotPitch(float pitch_val)
     {
-        motors[RightFrontMotorIndex].TargetRotationSpeed += -pitch_val;
-        motors[RightRearMotorIndex].TargetRotationSpeed += pitch_val;
-        motors[LeftFrontMotorIndex].TargetRotationSpeed += -pitch_val;
-        motors[LeftRearMotorIndex].TargetRotationSpeed += pitch_val;
+        motors[RightFrontMotorIndex].TargetThrust += -pitch_val;
+        motors[RightRearMotorIndex].TargetThrust += pitch_val;
+        motors[LeftFrontMotorIndex].TargetThrust += -pitch_val;
+        motors[LeftRearMotorIndex].TargetThrust += pitch_val;
     }
     protected override void RotYaw(float yaw_val)
     {
-        motors[RightFrontMotorIndex].TargetRotationSpeed += yaw_val;
-        motors[RightRearMotorIndex].TargetRotationSpeed += -yaw_val;
-        motors[LeftFrontMotorIndex].TargetRotationSpeed += -yaw_val;
-        motors[LeftRearMotorIndex].TargetRotationSpeed += yaw_val;
+        motors[RightFrontMotorIndex].TargetThrust += yaw_val;
+        motors[RightRearMotorIndex].TargetThrust += -yaw_val;
+        motors[LeftFrontMotorIndex].TargetThrust += -yaw_val;
+        motors[LeftRearMotorIndex].TargetThrust += yaw_val;
     }
     protected override void RotRoll(float roll_val)
     {
-        motors[RightFrontMotorIndex].TargetRotationSpeed += -roll_val;
-        motors[RightRearMotorIndex].TargetRotationSpeed += -roll_val;
-        motors[LeftFrontMotorIndex].TargetRotationSpeed += roll_val;
-        motors[LeftRearMotorIndex].TargetRotationSpeed += roll_val;
+        motors[RightFrontMotorIndex].TargetThrust += -roll_val;
+        motors[RightRearMotorIndex].TargetThrust += -roll_val;
+        motors[LeftFrontMotorIndex].TargetThrust += roll_val;
+        motors[LeftRearMotorIndex].TargetThrust += roll_val;
     }
 }

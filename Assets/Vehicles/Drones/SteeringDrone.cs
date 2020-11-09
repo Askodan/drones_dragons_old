@@ -14,7 +14,7 @@ public abstract class SteeringDrone : MonoBehaviour
     public PIDController yawKeeper; // A = 1, P = 0.01, I = 0, MI = 1, D = 0.001, BIBO = true
 
     public float autoAltitudePower = 30f;
-    public PIDController altitudeKeeper; // A = 1, P = 1, I = 0.1, MI = 1, D = 0.2, BIBO = true
+    public PIDController altitudeKeeper; // A = 1, P = 0.3, I = 0.01, MI = 1, D = 0.05, BIBO = true
 
     public float autoAnglePower = 50f;
     public PIDControllerFactory selfLevelerFactory; // A = 1, P = 0.01, I = 0, MI = 1, D = 0.001, BIBO = true
@@ -198,7 +198,7 @@ public abstract class SteeringDrone : MonoBehaviour
     {
         for (int i = 0; i < motors.Length; i++)
         {
-            motors[i].TargetRotationSpeed = 0;
+            motors[i].TargetThrust = 0;
         }
     }
     protected abstract void AddThrust(float thrust_val);
@@ -301,7 +301,7 @@ public abstract class SteeringDrone : MonoBehaviour
     {
         for (int i = 0; i < motors.Length; i++)
         {
-            Vector3 thrustVec = new Vector3(0, 0, motors[i].CurrentRotationSpeed * forceFactor);
+            Vector3 thrustVec = new Vector3(0, 0, motors[i].CurrentThrust * forceFactor);
             rigidbody.AddForceAtPosition(motors[i].transform.rotation * thrustVec, motors[i].transform.position);
             rigidbody.AddTorque(transform.rotation * new Vector3(0, motors[i].Rotation, 0));
         }
