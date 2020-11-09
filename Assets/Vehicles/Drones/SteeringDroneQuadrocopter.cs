@@ -4,22 +4,22 @@ using UnityEngine;
 
 public class SteeringDroneQuadrocopter : SteeringDrone
 {
-    protected int RightFrontPropellersIndex = -1;
-    protected int RightRearPropellersIndex = -1;
-    protected int LeftRearPropellersIndex = -1;
-    protected int LeftFrontPropellersIndex = -1;
+    protected int RightFrontMotorIndex = -1;
+    protected int RightRearMotorIndex = -1;
+    protected int LeftRearMotorIndex = -1;
+    protected int LeftFrontMotorIndex = -1;
 
-    protected override void CheckPropellers()
+    protected override void CheckMotors()
     {
-        if (propellers.Length != 4)
+        if (motors.Length != 4)
         {
-            Debug.LogError("Number of propellers doesn't match! Should be 4 is " + propellers.Length.ToString());
+            Debug.LogError("Number of motors doesn't match! Should be 4 is " + motors.Length.ToString());
         }
         float acceptableDistanceDiff = 0.0001f;
         float[] dists = new float[4];
         for (int i = 0; i < dists.Length; i++)
         {
-            dists[i] = Vector3.Distance(propellers[i].transform.position, centerOfMass.transform.position);
+            dists[i] = Vector3.Distance(motors[i].transform.position, centerOfMass.transform.position);
         }
         for (int i = 0; i < dists.Length; i++)
         {
@@ -35,48 +35,48 @@ public class SteeringDroneQuadrocopter : SteeringDrone
 
     protected override void Setup()
     {
-        AssignPropellersIndexes();
-        CheckPropellerIndexes();
+        AssignMotorsIndexes();
+        CheckMotorsIndexes();
     }
-    protected virtual void AssignPropellersIndexes()
+    protected virtual void AssignMotorsIndexes()
     {
-        // Sort propellers in order 0=x+z+, 1=x+z-, 2=x-z+, 3=x-z-
-        for (int i = 0; i < propellers.Length; i++)
+        // Sort motors in order 0=x+z+, 1=x+z-, 2=x-z+, 3=x-z-
+        for (int i = 0; i < motors.Length; i++)
         {
-            Vector3 pos = transform.InverseTransformPoint(propellers[i].transform.position);
-            propellers[i].Setup(IsRight(pos) ^ IsFront(pos));
+            Vector3 pos = transform.InverseTransformPoint(motors[i].transform.position);
+            motors[i].Setup(IsRight(pos) ^ IsFront(pos));
             if (IsRight(pos))
             {
                 if (IsFront(pos))
                 {
-                    RightFrontPropellersIndex = i;
+                    RightFrontMotorIndex = i;
                 }
                 else
                 {
-                    RightRearPropellersIndex = i;
+                    RightRearMotorIndex = i;
                 }
             }
             else
             {
                 if (IsFront(pos))
                 {
-                    LeftFrontPropellersIndex = i;
+                    LeftFrontMotorIndex = i;
                 }
                 else
                 {
-                    LeftRearPropellersIndex = i;
+                    LeftRearMotorIndex = i;
                 }
             }
         }
     }
-    protected virtual void CheckPropellerIndexes()
+    protected virtual void CheckMotorsIndexes()
     {
-        if (RightFrontPropellersIndex < 0 ||
-            RightRearPropellersIndex < 0 ||
-            LeftFrontPropellersIndex < 0 ||
-            LeftRearPropellersIndex < 0)
+        if (RightFrontMotorIndex < 0 ||
+            RightRearMotorIndex < 0 ||
+            LeftFrontMotorIndex < 0 ||
+            LeftRearMotorIndex < 0)
         {
-            Debug.LogError("Some propellers indexes weren't found");
+            Debug.LogError("Some motors indexes weren't found");
         }
     }
     protected bool IsRight(Vector3 pos)
@@ -89,30 +89,30 @@ public class SteeringDroneQuadrocopter : SteeringDrone
     }
     protected override void AddThrust(float thrust_val)
     {
-        propellers[RightFrontPropellersIndex].CurrentRotationSpeed += thrust_val;
-        propellers[RightRearPropellersIndex].CurrentRotationSpeed += thrust_val;
-        propellers[LeftFrontPropellersIndex].CurrentRotationSpeed += thrust_val;
-        propellers[LeftRearPropellersIndex].CurrentRotationSpeed += thrust_val;
+        motors[RightFrontMotorIndex].TargetRotationSpeed += thrust_val;
+        motors[RightRearMotorIndex].TargetRotationSpeed += thrust_val;
+        motors[LeftFrontMotorIndex].TargetRotationSpeed += thrust_val;
+        motors[LeftRearMotorIndex].TargetRotationSpeed += thrust_val;
     }
     protected override void RotPitch(float pitch_val)
     {
-        propellers[RightFrontPropellersIndex].CurrentRotationSpeed += -pitch_val;
-        propellers[RightRearPropellersIndex].CurrentRotationSpeed += pitch_val;
-        propellers[LeftFrontPropellersIndex].CurrentRotationSpeed += -pitch_val;
-        propellers[LeftRearPropellersIndex].CurrentRotationSpeed += pitch_val;
+        motors[RightFrontMotorIndex].TargetRotationSpeed += -pitch_val;
+        motors[RightRearMotorIndex].TargetRotationSpeed += pitch_val;
+        motors[LeftFrontMotorIndex].TargetRotationSpeed += -pitch_val;
+        motors[LeftRearMotorIndex].TargetRotationSpeed += pitch_val;
     }
     protected override void RotYaw(float yaw_val)
     {
-        propellers[RightFrontPropellersIndex].CurrentRotationSpeed += yaw_val;
-        propellers[RightRearPropellersIndex].CurrentRotationSpeed += -yaw_val;
-        propellers[LeftFrontPropellersIndex].CurrentRotationSpeed += -yaw_val;
-        propellers[LeftRearPropellersIndex].CurrentRotationSpeed += yaw_val;
+        motors[RightFrontMotorIndex].TargetRotationSpeed += yaw_val;
+        motors[RightRearMotorIndex].TargetRotationSpeed += -yaw_val;
+        motors[LeftFrontMotorIndex].TargetRotationSpeed += -yaw_val;
+        motors[LeftRearMotorIndex].TargetRotationSpeed += yaw_val;
     }
     protected override void RotRoll(float roll_val)
     {
-        propellers[RightFrontPropellersIndex].CurrentRotationSpeed += -roll_val;
-        propellers[RightRearPropellersIndex].CurrentRotationSpeed += -roll_val;
-        propellers[LeftFrontPropellersIndex].CurrentRotationSpeed += roll_val;
-        propellers[LeftRearPropellersIndex].CurrentRotationSpeed += roll_val;
+        motors[RightFrontMotorIndex].TargetRotationSpeed += -roll_val;
+        motors[RightRearMotorIndex].TargetRotationSpeed += -roll_val;
+        motors[LeftFrontMotorIndex].TargetRotationSpeed += roll_val;
+        motors[LeftRearMotorIndex].TargetRotationSpeed += roll_val;
     }
 }

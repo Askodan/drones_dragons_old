@@ -78,7 +78,7 @@ public abstract class SteeringDrone : MonoBehaviour
             {
                 targetYaw = gyroscope.GetRotation().y;
             }
-            SelfLevelingChanged.Invoke(_selfLeveling);
+            SelfLevelingChanged?.Invoke(_selfLeveling);
         }
     }
     // steering values
@@ -92,7 +92,7 @@ public abstract class SteeringDrone : MonoBehaviour
     // references
     public VehicleLight flashLight { get; protected set; }
     protected new Rigidbody rigidbody { get; set; }
-    protected Propeller[] propellers { get; set; }
+    protected DroneMotor[] motors { get; set; }
     protected CenterOfMass centerOfMass { get; set; }
     protected Gyroscope gyroscope { get; set; }
     protected SpeedMeter speedMeter { get; set; }
@@ -101,7 +101,7 @@ public abstract class SteeringDrone : MonoBehaviour
     void Awake()
     {
         FindReferenes();
-        CheckPropellers();
+        CheckMotors();
         Setup();
 
         PreparePIDControllers(stopperFactory, ref stoppers, 2);
@@ -114,14 +114,14 @@ public abstract class SteeringDrone : MonoBehaviour
         rigidbody.maxAngularVelocity = 100;
         centerOfMass = GetComponentInChildren<CenterOfMass>();
         rigidbody.centerOfMass = centerOfMass.transform.localPosition;
-        propellers = GetComponentsInChildren<Propeller>();
+        motors = GetComponentsInChildren<DroneMotor>();
         flashLight = GetComponentInChildren<VehicleLight>();
         gyroscope = GetComponentInChildren<Gyroscope>();
         speedMeter = GetComponentInChildren<SpeedMeter>();
         altitudeMeter = GetComponentInChildren<AltitudeMeter>();
     }
 
-    protected abstract void CheckPropellers();
+    protected abstract void CheckMotors();
     protected abstract void Setup();
 
     protected void PreparePIDControllers(PIDControllerFactory PID_factory, ref PIDController[] PID_array, int PID_num)
@@ -135,17 +135,14 @@ public abstract class SteeringDrone : MonoBehaviour
 
     void Update()
     {
-        if (motorsOn)
-        {
-            RotatePropellers(propellers);
-        }
+        RotateMotors(motors);
     }
 
-    void RotatePropellers(Propeller[] _propellers)
+    void RotateMotors(DroneMotor[] _motors)
     {
-        for (int i = 0; i < _propellers.Length; i++)
+        for (int i = 0; i < _motors.Length; i++)
         {
-            _propellers[i].Rotate();
+            _motors[i].Rotate();
         }
     }
 
@@ -181,16 +178,17 @@ public abstract class SteeringDrone : MonoBehaviour
 
     void FixedUpdate()
     {
-        if (motorsOn)
-        {
-            CalculatePropellersSpeed();
-            ApplyPropellersThrust();
-        }
+        CalculateMotorsSpeed();
+        ApplyMotorsThrust();
     }
 
-    protected virtual void CalculatePropellersSpeed()
+    protected virtual void CalculateMotorsSpeed()
     {
         ClearMotors();
+        if (!motorsOn)
+        {
+            return;
+        }
         CalcPitchRoll();
         CalcYaw();
         CalcThrust();
@@ -198,9 +196,9 @@ public abstract class SteeringDrone : MonoBehaviour
     }
     protected virtual void ClearMotors()
     {
-        for (int i = 0; i < propellers.Length; i++)
+        for (int i = 0; i < motors.Length; i++)
         {
-            propellers[i].CurrentRotationSpeed = 0;
+            motors[i].TargetRotationSpeed = 0;
         }
     }
     protected abstract void AddThrust(float thrust_val);
@@ -299,14 +297,13 @@ public abstract class SteeringDrone : MonoBehaviour
         RotYaw(stabilizators[1].Regulate(-localangularvelocity.y));
         RotRoll(stabilizators[2].Regulate(localangularvelocity.z));
     }
-    protected void ApplyPropellersThrust()
+    protected void ApplyMotorsThrust()
     {
-        for (int i = 0; i < propellers.Length; i++)
+        for (int i = 0; i < motors.Length; i++)
         {
-            Vector3 thrustVec = new Vector3(0, 0, propellers[i].CurrentRotationSpeed * forceFactor);
-            rigidbody.AddForceAtPosition(propellers[i].transform.rotation * thrustVec, propellers[i].transform.position);
-            rigidbody.AddTorque(transform.rotation * new Vector3(0, propellers[i].Rotation, 0));
-            //Debug.DrawLine (propellers [i].position, propellers [i].position + propellers [i].rotation * thrustVec);
+            Vector3 thrustVec = new Vector3(0, 0, motors[i].CurrentRotationSpeed * forceFactor);
+            rigidbody.AddForceAtPosition(motors[i].transform.rotation * thrustVec, motors[i].transform.position);
+            rigidbody.AddTorque(transform.rotation * new Vector3(0, motors[i].Rotation, 0));
         }
     }
 }

@@ -6,7 +6,7 @@ public class SteeringDronePrototype : SteeringDroneQuadrocopter
 {
     [Tooltip("Speed of moving wings")]
     public float wingsSpeed = 36f;
-    [Tooltip("Power of additional propellers")]
+    [Tooltip("Power of additional motors")]
     public float turboSpeed = 50f;
     public Vector3 FrontRotationAuto = new Vector3(0f, 0f, 270f);
     public Vector3 FrontRotationManual = new Vector3(0f, 0f, 135f);
@@ -14,15 +14,15 @@ public class SteeringDronePrototype : SteeringDroneQuadrocopter
     public Vector3 RearRotationManual = new Vector3(0f, 0f, 315f);
     private Coroutine moveWingsCoroutine;
     private bool isMoving;
-    protected int RightFrontTurboPropellersIndex = -1;
-    protected int RightRearTurboPropellersIndex = -1;
-    protected int LeftRearTurboPropellersIndex = -1;
-    protected int LeftFrontTurboPropellersIndex = -1;
-    protected override void CheckPropellers()
+    protected int RightFrontTurboMotorIndex = -1;
+    protected int RightRearTurboMotorIndex = -1;
+    protected int LeftRearTurboMotorIndex = -1;
+    protected int LeftFrontTurboMotorIndex = -1;
+    protected override void CheckMotors()
     {
-        if (propellers.Length != 8)
+        if (motors.Length != 8)
         {
-            Debug.LogError("Number of propellers doesn't match! Should be 8 is " + propellers.Length.ToString());
+            Debug.LogError("Number of motors doesn't match! Should be 8 is " + motors.Length.ToString());
         }
     }
     protected override void Setup()
@@ -37,36 +37,36 @@ public class SteeringDronePrototype : SteeringDroneQuadrocopter
             StopCoroutine(moveWingsCoroutine);
         moveWingsCoroutine = StartCoroutine(MoveWings(!up));
     }
-    protected override void AssignPropellersIndexes()
+    protected override void AssignMotorsIndexes()
     {
-        float[] distances = new float[propellers.Length];
-        float average_distance = CalcAveragePropellersDistanceFromCenter(distances);
-        for (int i = 0; i < propellers.Length; i++)
+        float[] distances = new float[motors.Length];
+        float average_distance = CalcAverageMotorsDistanceFromCenter(distances);
+        for (int i = 0; i < motors.Length; i++)
         {
-            Vector3 pos = transform.InverseTransformPoint(propellers[i].transform.position);
-            propellers[i].Setup(IsRight(pos) ^ IsFront(pos));
+            Vector3 pos = transform.InverseTransformPoint(motors[i].transform.position);
+            motors[i].Setup(IsRight(pos) ^ IsFront(pos));
             if (distances[i] < average_distance)
             {
                 if (IsRight(pos))
                 {
                     if (IsFront(pos))
                     {
-                        RightFrontPropellersIndex = i;
+                        RightFrontMotorIndex = i;
                     }
                     else
                     {
-                        RightRearPropellersIndex = i;
+                        RightRearMotorIndex = i;
                     }
                 }
                 else
                 {
                     if (IsFront(pos))
                     {
-                        LeftFrontPropellersIndex = i;
+                        LeftFrontMotorIndex = i;
                     }
                     else
                     {
-                        LeftRearPropellersIndex = i;
+                        LeftRearMotorIndex = i;
                     }
                 }
             }
@@ -76,46 +76,46 @@ public class SteeringDronePrototype : SteeringDroneQuadrocopter
                 {
                     if (IsFront(pos))
                     {
-                        RightFrontTurboPropellersIndex = i;
+                        RightFrontTurboMotorIndex = i;
                     }
                     else
                     {
-                        RightRearTurboPropellersIndex = i;
+                        RightRearTurboMotorIndex = i;
                     }
                 }
                 else
                 {
                     if (IsFront(pos))
                     {
-                        LeftFrontTurboPropellersIndex = i;
+                        LeftFrontTurboMotorIndex = i;
                     }
                     else
                     {
-                        LeftRearTurboPropellersIndex = i;
+                        LeftRearTurboMotorIndex = i;
                     }
                 }
             }
         }
     }
-    protected float CalcAveragePropellersDistanceFromCenter(float[] distances)
+    protected float CalcAverageMotorsDistanceFromCenter(float[] distances)
     {
         float sum_of_distances = 0;
-        for (int i = 0; i < propellers.Length; i++)
+        for (int i = 0; i < motors.Length; i++)
         {
-            distances[i] = Vector3.Distance(propellers[i].transform.position, transform.TransformPoint(rigidbody.centerOfMass));
+            distances[i] = Vector3.Distance(motors[i].transform.position, transform.TransformPoint(rigidbody.centerOfMass));
             sum_of_distances += distances[i];
         }
         return sum_of_distances / distances.Length;
     }
-    protected override void CheckPropellerIndexes()
+    protected override void CheckMotorsIndexes()
     {
-        base.CheckPropellerIndexes();
-        if (RightFrontTurboPropellersIndex < 0 ||
-            RightRearTurboPropellersIndex < 0 ||
-            LeftFrontTurboPropellersIndex < 0 ||
-            LeftRearTurboPropellersIndex < 0)
+        base.CheckMotorsIndexes();
+        if (RightFrontTurboMotorIndex < 0 ||
+            RightRearTurboMotorIndex < 0 ||
+            LeftFrontTurboMotorIndex < 0 ||
+            LeftRearTurboMotorIndex < 0)
         {
-            Debug.LogError("Some turbo propellers indexes weren't found");
+            Debug.LogError("Some turbo motors indexes weren't found");
         }
     }
     IEnumerator MoveWings(bool up)
@@ -123,48 +123,48 @@ public class SteeringDronePrototype : SteeringDroneQuadrocopter
         isMoving = true;
         if (up)
         {
-            while (CheckRotateWing(LeftFrontTurboPropellersIndex, FrontRotationAuto) &&
-                   CheckRotateWing(RightFrontTurboPropellersIndex, FrontRotationAuto) &&
-                   CheckRotateWing(LeftRearTurboPropellersIndex, RearRotationAuto) &&
-                   CheckRotateWing(RightRearTurboPropellersIndex, RearRotationAuto))
+            while (CheckRotateWing(LeftFrontTurboMotorIndex, FrontRotationAuto) &&
+                   CheckRotateWing(RightFrontTurboMotorIndex, FrontRotationAuto) &&
+                   CheckRotateWing(LeftRearTurboMotorIndex, RearRotationAuto) &&
+                   CheckRotateWing(RightRearTurboMotorIndex, RearRotationAuto))
             {
-                RotateWing(LeftFrontTurboPropellersIndex, FrontRotationAuto);
-                RotateWing(RightFrontTurboPropellersIndex, FrontRotationAuto);
-                RotateWing(LeftRearTurboPropellersIndex, RearRotationAuto);
-                RotateWing(RightRearTurboPropellersIndex, RearRotationAuto);
+                RotateWing(LeftFrontTurboMotorIndex, FrontRotationAuto);
+                RotateWing(RightFrontTurboMotorIndex, FrontRotationAuto);
+                RotateWing(LeftRearTurboMotorIndex, RearRotationAuto);
+                RotateWing(RightRearTurboMotorIndex, RearRotationAuto);
                 yield return null;
             }
         }
         else
         {
-            while (CheckRotateWing(LeftFrontTurboPropellersIndex, FrontRotationManual) &&
-                   CheckRotateWing(RightFrontTurboPropellersIndex, FrontRotationManual) &&
-                   CheckRotateWing(LeftRearTurboPropellersIndex, RearRotationManual) &&
-                   CheckRotateWing(RightRearTurboPropellersIndex, RearRotationManual))
+            while (CheckRotateWing(LeftFrontTurboMotorIndex, FrontRotationManual) &&
+                   CheckRotateWing(RightFrontTurboMotorIndex, FrontRotationManual) &&
+                   CheckRotateWing(LeftRearTurboMotorIndex, RearRotationManual) &&
+                   CheckRotateWing(RightRearTurboMotorIndex, RearRotationManual))
             {
-                RotateWing(LeftFrontTurboPropellersIndex, FrontRotationManual);
-                RotateWing(RightFrontTurboPropellersIndex, FrontRotationManual);
-                RotateWing(LeftRearTurboPropellersIndex, RearRotationManual);
-                RotateWing(RightRearTurboPropellersIndex, RearRotationManual);
+                RotateWing(LeftFrontTurboMotorIndex, FrontRotationManual);
+                RotateWing(RightFrontTurboMotorIndex, FrontRotationManual);
+                RotateWing(LeftRearTurboMotorIndex, RearRotationManual);
+                RotateWing(RightRearTurboMotorIndex, RearRotationManual);
                 yield return null;
             }
         }
         isMoving = false;
     }
-    private bool CheckRotateWing(int PropellerIndex, Vector3 TargetRotation)
+    private bool CheckRotateWing(int MotorIndex, Vector3 TargetRotation)
     {
-        return propellers[PropellerIndex].transform.parent.localRotation != Quaternion.Euler(TargetRotation);
+        return motors[MotorIndex].transform.parent.localRotation != Quaternion.Euler(TargetRotation);
     }
-    private void RotateWing(int PropellerIndex, Vector3 TargetRotation)
+    private void RotateWing(int MotorIndex, Vector3 TargetRotation)
     {
-        propellers[PropellerIndex].transform.parent.localRotation = Quaternion.RotateTowards(
-                    propellers[PropellerIndex].transform.parent.localRotation,
+        motors[MotorIndex].transform.parent.localRotation = Quaternion.RotateTowards(
+                    motors[MotorIndex].transform.parent.localRotation,
                     Quaternion.Euler(TargetRotation),
                     Time.deltaTime * wingsSpeed);
     }
-    protected override void CalculatePropellersSpeed()
+    protected override void CalculateMotorsSpeed()
     {
-        base.CalculatePropellersSpeed();
+        base.CalculateMotorsSpeed();
         CalcTurbo();
     }
     protected virtual void CalcTurbo()
@@ -176,9 +176,9 @@ public class SteeringDronePrototype : SteeringDroneQuadrocopter
     }
     protected virtual void RotTurbo(float turbo_val)
     {
-        propellers[RightFrontTurboPropellersIndex].CurrentRotationSpeed = -turbo_val;
-        propellers[RightRearTurboPropellersIndex].CurrentRotationSpeed = -turbo_val;
-        propellers[LeftFrontTurboPropellersIndex].CurrentRotationSpeed = -turbo_val;
-        propellers[LeftRearTurboPropellersIndex].CurrentRotationSpeed = -turbo_val;
+        motors[RightFrontTurboMotorIndex].TargetRotationSpeed = -turbo_val;
+        motors[RightRearTurboMotorIndex].TargetRotationSpeed = -turbo_val;
+        motors[LeftFrontTurboMotorIndex].TargetRotationSpeed = -turbo_val;
+        motors[LeftRearTurboMotorIndex].TargetRotationSpeed = -turbo_val;
     }
 }
