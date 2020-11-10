@@ -11,21 +11,21 @@ public abstract class SteeringDrone : MonoBehaviour
     public float forceFactor = 3.6f;
 
     public float autoYawPower = 100f;
-    public PIDController yawKeeper; // A = 1, P = 0.01, I = 0, MI = 1, D = 0.001, BIBO = true
+    public PIDController yawKeeper; // A = 0.5, P = 0.008, I = 0.001, MI = 1, D = 0.001, BIBO = true
 
     public float autoAltitudePower = 30f;
-    public PIDController altitudeKeeper; // A = 1, P = 0.3, I = 0.01, MI = 1, D = 0.05, BIBO = true
+    public PIDController altitudeKeeper; // A = 1, P = 0.2, I = 0.01, MI = 1, D = 0.05, BIBO = true
 
     public float autoAnglePower = 50f;
-    public PIDControllerFactory selfLevelerFactory; // A = 1, P = 0.01, I = 0, MI = 1, D = 0.001, BIBO = true
+    public PIDControllerFactory selfLevelerFactory; // A = 0.3, P = 0.01, I = 0, MI = 1, D = 0.0007, BIBO = true
     protected PIDController[] selfLevelers;
 
-    public PIDControllerFactory stabilizatorFactory; // A = 1, P = 0.03, I = 0.001, MI = 0.1, D = 0.001, BIBO = true
+    public PIDControllerFactory stabilizatorFactory; // A = 0.5, P = 0.07, I = 0, MI = 0.1, D = 0, BIBO = true
     protected PIDController[] stabilizators;
 
     public float maxAngle = 50f;
     public float autoSpeedPower = 60f;
-    public PIDControllerFactory stopperFactory; // A = 1, P = 0.1, I = 0, MI = 0.5, D = 0, BIBO = true
+    public PIDControllerFactory stopperFactory; // A = 1, P = 0.1, I = 0.05, MI = 5, D = 0.001, BIBO = true
     protected PIDController[] stoppers;
 
     // modes
